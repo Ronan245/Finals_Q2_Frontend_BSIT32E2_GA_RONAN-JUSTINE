@@ -6,10 +6,14 @@ export type Todo = {
   title: string;
   completed: boolean;
   createdAt: string;
+  previousHash: string;
+  hash: string;
 };
 
 type TodoContextType = {
   todos: Todo[];
+  isChainValid: boolean;
+  verifyChain: () => Promise<void>;
   fetchTodos: () => Promise<void>;
   addTodo: (title: string) => Promise<boolean>;
   deleteTodo: (id: string) => Promise<boolean>;
@@ -21,11 +25,21 @@ export const TodoContext = createContext<TodoContextType | undefined>(undefined)
 
 export const TodoProvider = ({ children }: { children: ReactNode }) => {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [isChainValid, setIsChainValid] = useState(true);
   const ghostTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map()
   );
 
   const API_BASE = "http://localhost:5154/api/todos";
+
+  const verifyChain = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/verify`);
+      setIsChainValid(res.ok);
+    } catch {
+      setIsChainValid(false);
+    }
+  };
 
   const fetchTodos = async () => {
     const res = await fetch(API_BASE);
@@ -33,6 +47,7 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
       const data: Todo[] = await res.json();
       setTodos(data);
     }
+    await verifyChain();
   };
 
   const addTodo = async (title: string) => {
@@ -46,6 +61,7 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
 
     const newTodo: Todo = await res.json();
     setTodos((prev) => [...prev, newTodo]);
+    await verifyChain();
     return true;
   };
 
@@ -63,6 +79,7 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setTodos((prev) => prev.filter((t) => t.id !== id));
+    await verifyChain();
     return true;
   };
 
@@ -97,6 +114,7 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
       ghostTimers.current.set(updated.id, timer);
     }
 
+    await verifyChain();
     return true;
   };
 
@@ -117,6 +135,7 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
 
     const updated: Todo = await res.json();
     setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    await verifyChain();
     return true;
   };
 
@@ -131,7 +150,16 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <TodoContext.Provider
-      value={{ todos, fetchTodos, addTodo, deleteTodo, toggleTodo, updateTodo }}
+      value={{
+        todos,
+        isChainValid,
+        verifyChain,
+        fetchTodos,
+        addTodo,
+        deleteTodo,
+        toggleTodo,
+        updateTodo,
+      }}
     >
       {children}
     </TodoContext.Provider>

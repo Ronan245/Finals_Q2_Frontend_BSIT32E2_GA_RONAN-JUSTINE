@@ -5,7 +5,7 @@ import { useTodos } from "../hooks/useTodos";
 
 export default function TodoPage() {
   const { theme } = useTheme();
-  const { todos } = useTodos();
+  const { todos, isChainValid } = useTodos();
 
   const isDark = theme === "dark";
   const isOcean = theme === "ocean";
@@ -25,6 +25,23 @@ export default function TodoPage() {
 
   return (
     <main style={{ maxWidth: "900px", margin: "0 auto", padding: "32px 20px" }}>
+      {!isChainValid && (
+        <div
+          style={{
+            backgroundColor: "#7f1d1d",
+            color: "#ffffff",
+            padding: "16px 18px",
+            borderRadius: "14px",
+            marginBottom: "20px",
+            fontWeight: 800,
+            textAlign: "center",
+            letterSpacing: "0.06em",
+          }}
+        >
+          REDACTED / TAMPERED
+        </div>
+      )}
+
       <header style={{ marginBottom: "24px" }}>
         <h1 style={{ color: textColor, marginBottom: "8px" }}>Todo App</h1>
         <p style={{ color: subTextColor, margin: 0 }}>
