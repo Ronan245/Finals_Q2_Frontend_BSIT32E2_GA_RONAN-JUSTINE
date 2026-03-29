@@ -1,5 +1,6 @@
 import { createContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { mineProof } from "../utils/mineProof";
 
 export type Todo = {
   id: string;
@@ -8,6 +9,8 @@ export type Todo = {
   createdAt: string;
   previousHash: string;
   hash: string;
+  nonce: number;
+  proof: string;
 };
 
 type TodoContextType = {
@@ -26,6 +29,7 @@ export const TodoContext = createContext<TodoContextType | undefined>(undefined)
 export const TodoProvider = ({ children }: { children: ReactNode }) => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isChainValid, setIsChainValid] = useState(true);
+
   const ghostTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map()
   );
@@ -43,18 +47,27 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchTodos = async () => {
     const res = await fetch(API_BASE);
+
     if (res.ok) {
       const data: Todo[] = await res.json();
       setTodos(data);
     }
+
     await verifyChain();
   };
 
   const addTodo = async (title: string) => {
+    const mined = await mineProof(title);
+
     const res = await fetch(API_BASE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, completed: false }),
+      body: JSON.stringify({
+        title,
+        completed: false,
+        nonce: mined.nonce,
+        proof: mined.proof,
+      }),
     });
 
     if (!res.ok) return false;
@@ -90,6 +103,8 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
       body: JSON.stringify({
         title: todo.title,
         completed: !todo.completed,
+        nonce: todo.nonce,
+        proof: todo.proof,
       }),
     });
 
@@ -122,12 +137,16 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
     const existing = todos.find((t) => t.id === id);
     if (!existing) return false;
 
+    const mined = await mineProof(title);
+
     const res = await fetch(`${API_BASE}/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title,
         completed: existing.completed,
+        nonce: mined.nonce,
+        proof: mined.proof,
       }),
     });
 

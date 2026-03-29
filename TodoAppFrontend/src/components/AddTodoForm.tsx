@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useTodos } from "../hooks/useTodos";
@@ -15,6 +16,7 @@ export default function AddTodoForm({ maxReached }: Props) {
   const { addTodo } = useTodos();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const [isMining, setIsMining] = useState(false);
 
   const {
     register,
@@ -43,16 +45,21 @@ export default function AddTodoForm({ maxReached }: Props) {
   const borderColor = isDark ? "#334155" : isOcean ? "#7dd3fc" : "#e5e7eb";
 
   const onSubmit = async (data: FormValues) => {
-    if (maxReached) return;
+    if (maxReached || isMining) return;
 
     const trimmedTitle = data.title.trim();
     if (!trimmedTitle) return;
 
-    const success = await addTodo(trimmedTitle);
+    setIsMining(true);
+    try {
+      const success = await addTodo(trimmedTitle);
 
-    if (success) {
-      reset();
-      navigate("/");
+      if (success) {
+        reset();
+        navigate("/");
+      }
+    } finally {
+      setIsMining(false);
     }
   };
 
@@ -106,7 +113,7 @@ export default function AddTodoForm({ maxReached }: Props) {
             id="title"
             type="text"
             placeholder="Enter todo title"
-            disabled={maxReached}
+            disabled={maxReached || isMining}
             {...register("title", {
               required: "Title is required",
               validate: (value) =>
@@ -119,7 +126,7 @@ export default function AddTodoForm({ maxReached }: Props) {
               border: `1px solid ${borderColor}`,
               backgroundColor: inputBg,
               color: textColor,
-              opacity: maxReached ? 0.6 : 1,
+              opacity: maxReached || isMining ? 0.6 : 1,
             }}
           />
 
@@ -143,20 +150,33 @@ export default function AddTodoForm({ maxReached }: Props) {
           </p>
         )}
 
+        {isMining && (
+          <p
+            style={{
+              color: "#60a5fa",
+              fontWeight: 600,
+              marginTop: "0",
+              marginBottom: "14px",
+            }}
+          >
+            Mining proof of work...
+          </p>
+        )}
+
         <button
           type="submit"
-          disabled={maxReached}
+          disabled={maxReached || isMining}
           style={{
-            backgroundColor: maxReached ? "#94a3b8" : "#3b82f6",
+            backgroundColor: maxReached || isMining ? "#94a3b8" : "#3b82f6",
             color: "#ffffff",
             border: "none",
             padding: "12px 18px",
             borderRadius: "12px",
             fontWeight: 700,
-            cursor: maxReached ? "not-allowed" : "pointer",
+            cursor: maxReached || isMining ? "not-allowed" : "pointer",
           }}
         >
-          Add Todo
+          {isMining ? "Mining..." : "Add Todo"}
         </button>
       </form>
     </section>

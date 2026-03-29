@@ -11,6 +11,7 @@ type Props = {
 
 export default function EditTodoModal({ todo, onClose }: Props) {
   const [title, setTitle] = useState(todo.title);
+  const [isMining, setIsMining] = useState(false);
   const { updateTodo } = useTodos();
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -34,13 +35,21 @@ export default function EditTodoModal({ todo, onClose }: Props) {
     : "#ffffff";
 
   const handleSave = async () => {
-    if (!title.trim()) return;
+    if (isMining) return;
 
-    const success = await updateTodo(todo.id, title.trim());
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
 
-    if (success) {
-      onClose();
-      navigate("/");
+    setIsMining(true);
+    try {
+      const success = await updateTodo(todo.id, trimmedTitle);
+
+      if (success) {
+        onClose();
+        navigate("/");
+      }
+    } finally {
+      setIsMining(false);
     }
   };
 
@@ -71,6 +80,7 @@ export default function EditTodoModal({ todo, onClose }: Props) {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          disabled={isMining}
           style={{
             width: "100%",
             padding: "12px 14px",
@@ -79,35 +89,44 @@ export default function EditTodoModal({ todo, onClose }: Props) {
             backgroundColor: inputBg,
             color: headingColor,
             marginBottom: "16px",
+            opacity: isMining ? 0.6 : 1,
           }}
         />
+
+        {isMining && (
+          <p style={{ color: "#60a5fa", marginTop: 0, marginBottom: "12px" }}>
+            Mining proof of work...
+          </p>
+        )}
 
         <div style={{ display: "flex", gap: "12px" }}>
           <button
             onClick={handleSave}
+            disabled={isMining}
             style={{
-              backgroundColor: "#3b82f6",
+              backgroundColor: isMining ? "#94a3b8" : "#3b82f6",
               color: "#ffffff",
               border: "none",
               padding: "10px 16px",
               borderRadius: "12px",
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: isMining ? "not-allowed" : "pointer",
             }}
           >
-            Save
+            {isMining ? "Mining..." : "Save"}
           </button>
 
           <button
             onClick={onClose}
+            disabled={isMining}
             style={{
-              backgroundColor: "#64748b",
+              backgroundColor: isMining ? "#94a3b8" : "#64748b",
               color: "#ffffff",
               border: "none",
               padding: "10px 16px",
               borderRadius: "12px",
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: isMining ? "not-allowed" : "pointer",
             }}
           >
             Cancel
