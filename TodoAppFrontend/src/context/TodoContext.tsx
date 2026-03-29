@@ -69,7 +69,7 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
     if (!res.ok) return false;
 
     const updated: Todo = await res.json();
-    setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t))); 
     return true;
   };
 

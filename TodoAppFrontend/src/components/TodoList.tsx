@@ -15,9 +15,7 @@ export default function TodoList() {
 
   return (
     <ul style={{ padding: 0, margin: 0 }}>
-      {todos.map((t) => (
-        <TodoItem key={t.id} todo={t} />
-      ))}
+        {todos.map((t) => (<TodoItem key={t.id} todo={t} />))}
     </ul>
   );
 }
