@@ -50,12 +50,26 @@ http://localhost:5173
 
 ---
 
+# 📦 Dependencies
+
+The project uses the following key libraries:
+
+```bash
+npm install react-router-dom
+npm install react-hook-form
+```
+
+* react-router-dom → Handles page navigation
+* react-hook-form → Handles form validation and performance
+
+---
+
 # 🔥 Core Features
 
 * React Router navigation
 * Context API state management
-* react-hook-form usage
-* Immutable updates
+* Form handling using **react-hook-form**
+* Immutable updates using `.map()` and `.filter()`
 * Theming system
 
 ---
@@ -145,7 +159,7 @@ key={t.id}
 This frontend demonstrates:
 
 * Modern React architecture
-* Efficient form handling
+* Efficient form handling using **react-hook-form**
 * Clean state management
 * Advanced validation features
 
