@@ -9,7 +9,7 @@ type Props = {
 };
 
 export default function TodoItem({ todo }: Props) {
-  const { deleteTodo, toggleTodo } = useTodos();
+  const { todos, deleteTodo, toggleTodo } = useTodos();
   const { theme } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
 
@@ -25,6 +25,24 @@ export default function TodoItem({ todo }: Props) {
   const borderColor = isDark ? "#334155" : isOcean ? "#7dd3fc" : "#e5e7eb";
   const headingColor = isDark || isOcean ? "#f8fafc" : "#0f172a";
   const textColor = isDark || isOcean ? "#cbd5e1" : "#475569";
+
+  const activeTodos = todos
+    .filter((t) => !t.completed)
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+  const firstActiveId = activeTodos.length > 0 ? activeTodos[0].id : null;
+
+  const isOldestActive = todo.id === firstActiveId;
+
+  // FIFO rule:
+  // - If task is already completed, allow toggling it back
+  // - If task is pending, only the oldest active one can be completed
+  const canToggle = todo.completed || isOldestActive;
+
+  const createdLabel = new Date(todo.createdAt).toLocaleString();
 
   return (
     <>
@@ -49,24 +67,47 @@ export default function TodoItem({ todo }: Props) {
           {todo.title}
         </h3>
 
-        <p style={{ color: textColor, marginTop: 0 }}>
+        <p style={{ color: textColor, marginTop: 0, marginBottom: "6px" }}>
           Status: {todo.completed ? "Completed" : "Pending"}
         </p>
+
+        <p style={{ color: textColor, marginTop: 0, marginBottom: "10px" }}>
+          Created: {createdLabel}
+        </p>
+
+        {!todo.completed && isOldestActive && (
+          <p style={{ color: "#22c55e", fontWeight: 600, marginTop: 0 }}>
+            Next task in line for completion.
+          </p>
+        )}
+
+        {!todo.completed && !canToggle && (
+          <p style={{ color: "#f59e0b", fontWeight: 600, marginTop: 0 }}>
+            Complete older tasks first.
+          </p>
+        )}
+
+        {todo.completed && (
+          <p style={{ color: "#60a5fa", fontWeight: 600, marginTop: 0 }}>
+            This task will vanish 15 seconds after completion.
+          </p>
+        )}
 
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <button
             onClick={() => toggleTodo(todo)}
+            disabled={!canToggle}
             style={{
-              backgroundColor: "#22c55e",
+              backgroundColor: canToggle ? "#22c55e" : "#94a3b8",
               color: "#ffffff",
               border: "none",
               padding: "10px 14px",
               borderRadius: "10px",
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: canToggle ? "pointer" : "not-allowed",
             }}
           >
-            Toggle
+            {todo.completed ? "Undo" : "Complete"}
           </button>
 
           <button

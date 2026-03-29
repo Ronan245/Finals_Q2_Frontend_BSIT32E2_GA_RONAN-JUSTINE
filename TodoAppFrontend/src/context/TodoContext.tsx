@@ -1,10 +1,11 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 export type Todo = {
   id: string;
   title: string;
   completed: boolean;
+  createdAt: string;
 };
 
 type TodoContextType = {
@@ -20,6 +21,9 @@ export const TodoContext = createContext<TodoContextType | undefined>(undefined)
 
 export const TodoProvider = ({ children }: { children: ReactNode }) => {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const ghostTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
 
   const API_BASE = "http://localhost:5154/api/todos";
 
@@ -52,6 +56,12 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
 
     if (!res.ok) return false;
 
+    const existingTimer = ghostTimers.current.get(id);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      ghostTimers.current.delete(id);
+    }
+
     setTodos((prev) => prev.filter((t) => t.id !== id));
     return true;
   };
@@ -69,7 +79,24 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
     if (!res.ok) return false;
 
     const updated: Todo = await res.json();
-    setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t))); 
+
+    setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+
+    const existingTimer = ghostTimers.current.get(updated.id);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      ghostTimers.current.delete(updated.id);
+    }
+
+    if (updated.completed) {
+      const timer = setTimeout(async () => {
+        await deleteTodo(updated.id);
+        ghostTimers.current.delete(updated.id);
+      }, 15000);
+
+      ghostTimers.current.set(updated.id, timer);
+    }
+
     return true;
   };
 
@@ -95,6 +122,11 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchTodos();
+
+    return () => {
+      ghostTimers.current.forEach((timer) => clearTimeout(timer));
+      ghostTimers.current.clear();
+    };
   }, []);
 
   return (
