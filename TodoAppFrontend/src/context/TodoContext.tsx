@@ -133,30 +133,36 @@ export const TodoProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
-  const updateTodo = async (id: string, title: string) => {
-    const existing = todos.find((t) => t.id === id);
-    if (!existing) return false;
+const updateTodo = async (id: string, title: string) => {
+  const existing = todos.find((t) => t.id === id);
+  if (!existing) return false;
 
-    const mined = await mineProof(title);
+  // 🚫 Block editing if completed
+  if (existing.completed) {
+    console.warn("Cannot edit a completed task. Undo it first.");
+    return false;
+  }
 
-    const res = await fetch(`${API_BASE}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        completed: existing.completed,
-        nonce: mined.nonce,
-        proof: mined.proof,
-      }),
-    });
+  const mined = await mineProof(title);
 
-    if (!res.ok) return false;
+  const res = await fetch(`${API_BASE}/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title,
+      completed: existing.completed,
+      nonce: mined.nonce,
+      proof: mined.proof,
+    }),
+  });
 
-    const updated: Todo = await res.json();
-    setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-    await verifyChain();
-    return true;
-  };
+  if (!res.ok) return false;
+
+  const updated: Todo = await res.json();
+  setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+  await verifyChain();
+  return true;
+};
 
   useEffect(() => {
     fetchTodos();

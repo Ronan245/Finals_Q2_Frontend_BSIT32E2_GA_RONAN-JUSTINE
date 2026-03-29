@@ -13,7 +13,7 @@ export async function mineProof(title: string) {
       .join("")
       .toUpperCase();
 
-    // Log every 1000 tries (so console is not spammed)
+
     if (nonce % 1000 === 0) {
       console.log("Trying nonce:", nonce);
     }

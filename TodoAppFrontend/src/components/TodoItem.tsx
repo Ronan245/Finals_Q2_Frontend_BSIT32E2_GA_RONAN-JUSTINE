@@ -37,9 +37,7 @@ export default function TodoItem({ todo }: Props) {
 
   const isOldestActive = todo.id === firstActiveId;
 
-  // FIFO rule:
-  // - If task is already completed, allow toggling it back
-  // - If task is pending, only the oldest active one can be completed
+
   const canToggle = todo.completed || isOldestActive;
 
   const createdLabel = new Date(todo.createdAt).toLocaleString();
@@ -112,14 +110,15 @@ export default function TodoItem({ todo }: Props) {
 
           <button
             onClick={() => setIsEditing(true)}
+            disabled={todo.completed}
             style={{
-              backgroundColor: "#f59e0b",
+              backgroundColor: todo.completed ? "#94a3b8" : "#f59e0b",
               color: "#ffffff",
               border: "none",
               padding: "10px 14px",
               borderRadius: "10px",
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: todo.completed ? "not-allowed" : "pointer",
             }}
           >
             Edit
